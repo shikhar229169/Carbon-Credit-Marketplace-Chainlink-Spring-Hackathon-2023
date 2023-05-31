@@ -2,6 +2,9 @@
 
 pragma solidity ^0.8.18;
 
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "./UserCampaigns.sol";
+
 error CarbonMarketplace__invalidAdmin();
 error CarbonMarketplace__duplicateAdmin();
 error CarbonMarketplace__notAdmin();
@@ -10,14 +13,24 @@ error CarbonMarketplace__alreadyDeployed();
 error CarbonMarketplace__invalidProjectId();
 error CarbonMarketplace__alreadyNotApproved();
 error CarbonMarketplace__notEnoughApprovals();
+error CarbonMarketplace__invalidAuthor();
 
-contract CarbonMarketplace {
+contract CarbonMarketplace is ERC20 {
     struct Project {
         address author;
         string projectName;
         string projectLink;
         bool accepted;
         uint256 approvals;
+        address authorCampaignContract;
+    }
+
+    struct Emission {
+        uint256 SO2;
+        uint256 NO2;
+        uint256 CO;
+        uint256 PM2_5;
+        uint256 PM10;
     }
 
     address[] private admins;
@@ -29,6 +42,7 @@ contract CarbonMarketplace {
     uint256 private totalProjects;
     uint256 private acceptedProjects;
 
+    mapping(uint256 => Emission) projectToLatestEmissions;
 
     // Events
     event ProposalSubmitted(uint256 indexed projectId, address indexed author, string indexed projectName);
@@ -37,7 +51,7 @@ contract CarbonMarketplace {
     event ProposalAccepted(uint256 indexed projectId, address indexed admin);
 
 
-    constructor(address[] memory _admins, uint256 _approvalsRequired) {
+    constructor(address[] memory _admins, uint256 _approvalsRequired) ERC20("Carbon Credit", "CC") {
         require(_approvalsRequired > 0 && _approvalsRequired <= _admins.length, "Invalid number of approvers");
         require(_admins.length > 0, "Atleast one admin required");
 
@@ -96,6 +110,10 @@ contract CarbonMarketplace {
 
 
     function submitProposal(string memory projectName, string memory projectLink) external {
+        if (msg.sender != tx.origin) {
+            revert CarbonMarketplace__invalidAuthor();
+        }
+
         uint256 id = totalProjects;
         totalProjects++;
 
@@ -104,7 +122,8 @@ contract CarbonMarketplace {
             projectName,
             projectLink,
             false,
-            0
+            0,
+            address(0)
         ));
 
         emit ProposalSubmitted(id, msg.sender, projectName);
@@ -129,10 +148,17 @@ contract CarbonMarketplace {
             revert CarbonMarketplace__notEnoughApprovals();
         }
 
-        projects[projectId].accepted = true;
+        Project storage authorProject = projects[projectId];
+        authorProject.accepted = true;
         acceptedProjects++;
 
-        // Deploy the Project contract and transfer ownership to user
+        // initialize the emission.
+        
+        authorProject.authorCampaignContract = address(new UserCampaign(
+            projectId, 
+            authorProject.projectName, 
+            authorProject.author
+        ));
 
         emit ProposalAccepted(projectId, msg.sender);
     }
