@@ -63,7 +63,7 @@ contract CarbonMarketplace is ERC20 {
     event TokenRewarded(uint256 indexed projectId, address indexed author, uint256 indexed tokens);
 
 
-    constructor(address[] memory _admins, uint256 _approvalsRequired, address _emissionFeeds, address _weatherFeeds, uint256 _reviewInterval) ERC20("Carbon Credit", "CC") {
+    constructor(address[] memory _admins, uint256 _approvalsRequired, address _emissionFeeds, address _weatherFeeds, uint256 _reviewInterval) ERC20("Carbon Coin", "CC") {
         require(_approvalsRequired > 0 && _approvalsRequired <= _admins.length, "Invalid number of approvers");
         require(_admins.length > 0, "Atleast one admin required");
 
