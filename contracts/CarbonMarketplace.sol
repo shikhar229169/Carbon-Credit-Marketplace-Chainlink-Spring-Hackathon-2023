@@ -5,6 +5,10 @@ pragma solidity ^0.8.18;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./UserCampaigns.sol";
 
+interface IEmissionFeeds {
+    function latestResponse() external returns (bytes memory);
+}
+
 error CarbonMarketplace__invalidAdmin();
 error CarbonMarketplace__duplicateAdmin();
 error CarbonMarketplace__notAdmin();
@@ -14,8 +18,18 @@ error CarbonMarketplace__invalidProjectId();
 error CarbonMarketplace__alreadyNotApproved();
 error CarbonMarketplace__notEnoughApprovals();
 error CarbonMarketplace__invalidAuthor();
+error CarbonMarketplace__projectNotApproved();
+error CarbonMarketplace__reviewNotRequired();
 
 contract CarbonMarketplace is ERC20 {
+    struct Emission {
+        int256 CO;
+        int256 NO2;
+        int256 SO2;
+        int256 PM2_5;
+        int256 PM10;
+    }
+
     struct Project {
         address author;
         string projectName;
@@ -23,15 +37,10 @@ contract CarbonMarketplace is ERC20 {
         bool accepted;
         uint256 approvals;
         address authorCampaignContract;
+        Emission latestEmissionFeeds;
+        uint256 latestReviewTimestamp;
     }
 
-    struct Emission {
-        uint256 SO2;
-        uint256 NO2;
-        uint256 CO;
-        uint256 PM2_5;
-        uint256 PM10;
-    }
 
     address[] private admins;
     mapping(address => bool) private isAdmin;
@@ -42,16 +51,18 @@ contract CarbonMarketplace is ERC20 {
     uint256 private totalProjects;
     uint256 private acceptedProjects;
 
-    mapping(uint256 => Emission) projectToLatestEmissions;
+    IEmissionFeeds public emissionFeeds;
+    uint256 public reviewInterval;
 
     // Events
     event ProposalSubmitted(uint256 indexed projectId, address indexed author, string indexed projectName);
     event Approved(uint256 indexed projectId, address indexed validator);
     event Revoked(uint256 indexed projectId, address indexed validator);
     event ProposalAccepted(uint256 indexed projectId, address indexed admin);
+    event TokenRewarded(uint256 indexed projectId, address indexed author, uint256 indexed tokens);
 
 
-    constructor(address[] memory _admins, uint256 _approvalsRequired) ERC20("Carbon Credit", "CC") {
+    constructor(address[] memory _admins, uint256 _approvalsRequired, address _emissionFeeds, uint256 _reviewInterval) ERC20("Carbon Credit", "CC") {
         require(_approvalsRequired > 0 && _approvalsRequired <= _admins.length, "Invalid number of approvers");
         require(_admins.length > 0, "Atleast one admin required");
 
@@ -71,6 +82,9 @@ contract CarbonMarketplace is ERC20 {
         approvalsRequired = _approvalsRequired;
         totalProjects = 0;
         acceptedProjects = 0;
+
+        emissionFeeds = IEmissionFeeds(_emissionFeeds);
+        reviewInterval = _reviewInterval;
     }
 
     modifier onlyAdmins {
@@ -123,7 +137,9 @@ contract CarbonMarketplace is ERC20 {
             projectLink,
             false,
             0,
-            address(0)
+            address(0),
+            Emission(0,0,0,0,0),
+            0
         ));
 
         emit ProposalSubmitted(id, msg.sender, projectName);
@@ -152,8 +168,11 @@ contract CarbonMarketplace is ERC20 {
         authorProject.accepted = true;
         acceptedProjects++;
 
-        // initialize the emission.
-        
+        bytes memory data = emissionFeeds.latestResponse();
+        (int256 co, int256 no2, int256 so2, int256 pm2_5, int256 pm10) = abi.decode(data, (int256, int256, int256, int256, int256));
+        projects[projectId].latestEmissionFeeds = Emission(co, no2, so2, pm2_5, pm10);
+        projects[projectId].latestReviewTimestamp = block.timestamp;
+
         authorProject.authorCampaignContract = address(new UserCampaign(
             projectId, 
             authorProject.projectName, 
@@ -163,12 +182,44 @@ contract CarbonMarketplace is ERC20 {
         emit ProposalAccepted(projectId, msg.sender);
     }
 
-    function reviewProject(uint256 projectId) external onlyAdmins {
-        // Timeout
-        // Admin will check the climate conditions of the area, and will
-        // reward the owner with tokens
-        // on the basis of climate improvements
-        // user can buy merchandise with these tokens
+    function reviewProject(uint256 projectId) external onlyAdmins projectExist(projectId) {
+        if (!projects[projectId].accepted) {
+            revert CarbonMarketplace__projectNotApproved();
+        }
+
+        Project storage userProject = projects[projectId];
+
+        if ((block.timestamp - userProject.latestReviewTimestamp) < reviewInterval) {
+            revert CarbonMarketplace__reviewNotRequired();
+        }
+
+        userProject.latestReviewTimestamp = block.timestamp;
+
+        bytes memory data = emissionFeeds.latestResponse();
+        (int256 co, int256 no2, int256 so2, int256 pm2_5, int256 pm10) = abi.decode(data, (int256, int256, int256, int256, int256));
+
+        uint256 totalTokens = 0;
+        if (co < userProject.latestEmissionFeeds.CO) {
+            totalTokens += 10;
+        }
+        if (no2 < userProject.latestEmissionFeeds.NO2) {
+            totalTokens += 10;
+        }
+        if (so2 < userProject.latestEmissionFeeds.SO2) {
+            totalTokens += 10;
+        }
+        if (pm2_5 < userProject.latestEmissionFeeds.PM2_5) {
+            totalTokens += 10;
+        }
+        if (pm10 < userProject.latestEmissionFeeds.PM10) {
+            totalTokens += 10;
+        }
+        
+        _mint(userProject.author, totalTokens * 1e18);
+
+        emit TokenRewarded(projectId, userProject.author, totalTokens);
+
+        userProject.latestEmissionFeeds = Emission(co, no2, so2, pm2_5, pm10);
     }
 
     function getApprovedProjects() external view onlyAdmins returns (Project[] memory) {
