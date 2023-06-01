@@ -2,6 +2,10 @@
 
 pragma solidity ^0.8.18;
 
+interface IWeatherFeeds {
+    function latestResponse() external returns (bytes memory);
+}
+
 error UserCampaign__notOwner();
 error UserCampaign__invalidOwner();
 error UserCampaign__notEnoughETH();
@@ -22,16 +26,18 @@ contract UserCampaign {
     address[] public donators;
     mapping(address => uint256) public donationsBy;
     Logs[] public logs;
+    IWeatherFeeds public weatherFeeds;
     
     // Events
     event donationsReceived(address indexed donator, uint256 indexed amount);
     event logsAdded(string indexed caption, string indexed location, uint256 indexed timestamp);
     event withdrawn(address indexed owner, uint256 indexed amount);
 
-    constructor(uint256 _id, string memory _projectName, address author) {
+    constructor(uint256 _id, string memory _projectName, address author, address _weatherFeeds) {
         projectID = _id;
         projectName = _projectName;
         owner = author;
+        weatherFeeds = IWeatherFeeds(_weatherFeeds);
     }
 
     modifier onlyOwner {
@@ -43,7 +49,7 @@ contract UserCampaign {
 
     function addLogs(string memory caption, string memory location) external onlyOwner {
         // take the weather from contract
-        string memory weather = "";
+        string memory weather = string(weatherFeeds.latestResponse());
 
         logs.push(Logs(
             block.timestamp,
