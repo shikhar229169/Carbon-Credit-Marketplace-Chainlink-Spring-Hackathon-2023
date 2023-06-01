@@ -52,6 +52,7 @@ contract CarbonMarketplace is ERC20 {
     uint256 private acceptedProjects;
 
     IEmissionFeeds public emissionFeeds;
+    IWeatherFeeds public weatherFeeds;
     uint256 public reviewInterval;
 
     // Events
@@ -62,7 +63,7 @@ contract CarbonMarketplace is ERC20 {
     event TokenRewarded(uint256 indexed projectId, address indexed author, uint256 indexed tokens);
 
 
-    constructor(address[] memory _admins, uint256 _approvalsRequired, address _emissionFeeds, uint256 _reviewInterval) ERC20("Carbon Credit", "CC") {
+    constructor(address[] memory _admins, uint256 _approvalsRequired, address _emissionFeeds, address _weatherFeeds, uint256 _reviewInterval) ERC20("Carbon Credit", "CC") {
         require(_approvalsRequired > 0 && _approvalsRequired <= _admins.length, "Invalid number of approvers");
         require(_admins.length > 0, "Atleast one admin required");
 
@@ -84,6 +85,7 @@ contract CarbonMarketplace is ERC20 {
         acceptedProjects = 0;
 
         emissionFeeds = IEmissionFeeds(_emissionFeeds);
+        weatherFeeds = IWeatherFeeds(_weatherFeeds);
         reviewInterval = _reviewInterval;
     }
 
@@ -176,7 +178,8 @@ contract CarbonMarketplace is ERC20 {
         authorProject.authorCampaignContract = address(new UserCampaign(
             projectId, 
             authorProject.projectName, 
-            authorProject.author
+            authorProject.author,
+            address(weatherFeeds)
         ));
 
         emit ProposalAccepted(projectId, msg.sender);
