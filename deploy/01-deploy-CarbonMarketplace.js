@@ -29,7 +29,7 @@ module.exports = async({ deployments, getNamedAccounts }) => {
     }
 
     const args = [admins, approvalsRequired, emissionFeeds, weatherFeeds, reviewInterval]
-
+    
     const CarbonMarketplace = await deploy("CarbonMarketplace", {
         from: deployer,
         log: true,
