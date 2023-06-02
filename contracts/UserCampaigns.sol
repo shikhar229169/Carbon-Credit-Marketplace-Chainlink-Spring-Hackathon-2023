@@ -104,4 +104,8 @@ contract UserCampaign {
 
         return (donators, amountDonated);
     }
+
+    function getAllLogs() public view returns (Logs[] memory) {
+        return logs;
+    }
 }
