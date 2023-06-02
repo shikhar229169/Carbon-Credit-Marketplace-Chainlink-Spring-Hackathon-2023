@@ -147,7 +147,7 @@ contract CarbonMarketplace is ERC20 {
         emit ProposalSubmitted(id, msg.sender, projectName);
     }
 
-    function approve(uint256 projectId) external onlyAdmins projectExist(projectId) notApproved(projectId) notDeployed(projectId) {
+    function giveApproval(uint256 projectId) external onlyAdmins projectExist(projectId) notApproved(projectId) notDeployed(projectId) {
         approved[projectId][msg.sender] = true;
         projects[projectId].approvals++;
 
@@ -225,7 +225,7 @@ contract CarbonMarketplace is ERC20 {
         userProject.latestEmissionFeeds = Emission(co, no2, so2, pm2_5, pm10);
     }
 
-    function getApprovedProjects() external view onlyAdmins returns (Project[] memory) {
+    function getApprovedProjects() external view returns (Project[] memory) {
         Project[] memory allProjects = new Project[](acceptedProjects);
         
         uint256 counter = 0;
