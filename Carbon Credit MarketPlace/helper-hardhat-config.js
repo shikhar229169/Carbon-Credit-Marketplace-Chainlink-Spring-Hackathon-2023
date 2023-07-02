@@ -5,13 +5,15 @@ const networkConfig = {
         weatherFeeds: "0x60e55982f7DF115D58eae49E631eE2FdC8aB0Ef6",
         admins: ["0xc15BB2baF07342aad4d311D0bBF2cEaf78ff2930", "0xF1c8170181364DeD1C56c4361DED2eB47f2eef1b"],
         approvalsRequired: 2,
-        reviewInterval: 0
+        reviewInterval: 0,
+        nftCosts: [20, 30, 25, 30, 40]
     },
 
     31337: {
         name: "hardhat",
         approvalsRequired: 2,
-        reviewInterval: 604800
+        reviewInterval: 604800,
+        nftCosts: [20, 30, 25, 30, 40]
     }
 }
 
