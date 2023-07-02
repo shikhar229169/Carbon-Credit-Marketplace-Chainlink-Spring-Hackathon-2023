@@ -44,7 +44,7 @@ contract CarbonMarketplace is ERC20 {
 
 
     address[] public admins;
-    mapping(address => bool) private isAdmin;
+    mapping(address => bool) private _isAdmin;
     uint256 public approvalsRequired;
 
     Project[] public projects;
@@ -73,12 +73,12 @@ contract CarbonMarketplace is ERC20 {
                 revert CarbonMarketplace__invalidAdmin();
             }
 
-            if (isAdmin[_admins[i]]) {
+            if (_isAdmin[_admins[i]]) {
                 revert CarbonMarketplace__duplicateAdmin();
             }
 
             admins.push(_admins[i]);
-            isAdmin[admins[i]] = true;
+            _isAdmin[admins[i]] = true;
         }
 
         approvalsRequired = _approvalsRequired;
@@ -91,7 +91,7 @@ contract CarbonMarketplace is ERC20 {
     }
 
     modifier onlyAdmins {
-        if (!isAdmin[msg.sender]) {
+        if (!_isAdmin[msg.sender]) {
             revert CarbonMarketplace__notAdmin();
         }
         _;
@@ -255,7 +255,13 @@ contract CarbonMarketplace is ERC20 {
         return allProjects;
     }
 
+    
+
     function getProjectAt(uint256 projectId) external projectExist(projectId) view returns (Project memory) {
         return projects[projectId];
+    }
+    
+    function isAdmin(address addr) external view returns (bool) {
+        return _isAdmin[addr];
     }
 }
