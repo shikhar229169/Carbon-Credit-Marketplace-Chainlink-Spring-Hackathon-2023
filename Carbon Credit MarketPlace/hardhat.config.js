@@ -29,7 +29,7 @@ module.exports = {
     mumbai: {
       chainId: 80001,
       url: process.env.MUMBAI_RPC_URL,
-      accounts: [process.env.PRIVATE_KEY]
+      accounts: [process.env.PRIVATE_KEY, process.env.ADMIN_PRIVATE_KEY, process.env.BUYER_PRIVATE_KEY]
     }
   },
 
@@ -45,6 +45,9 @@ module.exports = {
     },
     admin2: {
       default: 1
+    },
+    buyer: {
+      default: 2
     }
   },
 
