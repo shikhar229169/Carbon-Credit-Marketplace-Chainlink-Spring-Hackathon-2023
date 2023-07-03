@@ -31,7 +31,11 @@ contract CarbonNFTMarketplace is ERC721 {
     event newNFTAdded(uint256 indexed nftIndex);
     event priceChanged(uint256 indexed nftIdx, uint256 indexed newPrice);
 
-    constructor(string[] memory tokenURIs, uint256[] memory costs, address carbonMarketPlaceAddress) ERC721("Carbon Coin NFT", "CCN") {
+    constructor(
+        string[] memory tokenURIs, 
+        uint256[] memory costs, 
+        address carbonMarketPlaceAddress
+    ) ERC721("Carbon NFT", "CN") { 
         if (tokenURIs.length == 0) {
             revert CarbonNFTMarketplace__minOneNFTShouldBeAdded();
         } 
@@ -133,5 +137,9 @@ contract CarbonNFTMarketplace is ERC721 {
 
     function getCarbonMarketplace() external view returns (address) {
         return address(carbonMarketPlace);
+    }
+
+    function getTotalAvailableNFTs() external view returns (uint256) {
+        return s_NFTs.length;
     }
 }

@@ -13,11 +13,20 @@ const imagesFilePath = "./images"
 module.exports = async({ deployments, getNamedAccounts }) => {
     const { deploy, log } = deployments;
     const { deployer } = await getNamedAccounts();
+    const chainId = network.config.chainId
 
     const carbonMarketPlace = await ethers.getContract("CarbonMarketplace");
 
-    const tokenURI = await uploadImageToIpfs(imagesFilePath)
-    const price = networkConfig[network.config.chainId].nftCosts
+    let tokenURI
+    if (process.env.UPLOAD_TO_IPFS == "true") {
+        tokenURI = await uploadImageToIpfs(imagesFilePath)
+        console.log(tokenURI)
+    }
+    else {
+        tokenURI = networkConfig[chainId].tokenURIs
+    }
+
+    const price = networkConfig[chainId].nftCosts
 
     const args = [tokenURI, price, carbonMarketPlace.address]
 
@@ -33,4 +42,4 @@ module.exports = async({ deployments, getNamedAccounts }) => {
 }
 
 
-module.exports.tags = ["nftContract"]
+module.exports.tags = ["all", "nftContract"]
