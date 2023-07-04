@@ -25,7 +25,7 @@ module.exports = {
 
   networks: {
     hardhat: {},
-    
+    localhost: {},
     mumbai: {
       chainId: 80001,
       url: process.env.MUMBAI_RPC_URL,
