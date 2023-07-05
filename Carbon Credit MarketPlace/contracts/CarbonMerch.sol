@@ -144,7 +144,7 @@ contract CarbonMerch {
                 revert CarbonMerch__qtyError();
             }
 
-            products[productIds[i]].qty -= qty[i];
+            products[productIds[i]].qty = product.qty - qty[i];
             bill += (product.cost * qty[i]);
         }
 
