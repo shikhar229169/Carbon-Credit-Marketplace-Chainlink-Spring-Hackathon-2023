@@ -145,7 +145,7 @@ contract CarbonMerch {
             }
 
             products[productIds[i]].qty -= qty[i];
-            bill += product.cost;
+            bill += (product.cost * qty[i]);
         }
 
         // Pay Amount
