@@ -58,6 +58,7 @@ contract CarbonMerch {
 
     // Events
     event productAdded(string indexed name, uint256 indexed id);
+    event stockAdded(uint256 indexed productId, uint256 indexed increasedQty);
     event orderPlaced(uint256 indexed orderId, address indexed consumer, uint256 indexed bill);
     event orderPacked(uint256 indexed orderId);
     event orderShipped(uint256 indexed orderId);
@@ -89,7 +90,7 @@ contract CarbonMerch {
         uint256 cost,
         string memory imageURI, 
         Category category
-    ) public {
+    ) public onlyAdmins {
         if (initQty == 0) {
             revert CarbonMerch__zeroQty();
         }
@@ -116,6 +117,7 @@ contract CarbonMerch {
         }
 
         products[productId].qty += extraQty;
+        emit stockAdded(productId, extraQty);
     }
 
     /**@param productIds It contains the ids of products the consumer wants to buy
